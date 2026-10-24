@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Car Key login</title>
+<style>
+  body { font-family: -apple-system, system-ui, sans-serif; background:#111; color:#eee; margin:0; padding:24px 16px; }
+  h1 { font-size:22px; margin:0 0 16px; }
+  input, button, textarea { width:100%; box-sizing:border-box; font-size:17px; padding:14px; border-radius:10px; border:1px solid #444; background:#1c1c1e; color:#eee; margin:8px 0; }
+  button { background:#cc2828; border:0; font-weight:600; }
+  textarea { height:120px; font-family: ui-monospace, monospace; font-size:14px; }
+  p { color:#aaa; line-height:1.4; }
+</style>
+</head>
+<body>
+<div id="login">
+  <h1>1. Log in with Tesla</h1>
+  <p>Paste the Client ID from developer.tesla.com, then tap the button.</p>
+  <input id="cid" placeholder="Client ID" autocapitalize="off" autocorrect="off">
+  <select id="reg" style="display:none"></select>
+  <button onclick="go()">Log in with Tesla</button>
+</div>
+<div id="done" style="display:none">
+  <h1>2. Copy this code</h1>
+  <p>Copy the code, then run the <b>Tesla token</b> workflow on GitHub within 5 minutes and paste it there.</p>
+  <textarea id="code" readonly></textarea>
+  <button onclick="copyCode()">Copy code</button>
+</div>
+<script>
+  var redirect = location.origin + location.pathname;
+  var q = new URLSearchParams(location.search);
+  try { document.getElementById('cid').value = localStorage.getItem('cid') || ''; } catch (e) {}
+  if (q.get('code')) {
+    document.getElementById('login').style.display = 'none';
+    document.getElementById('done').style.display = 'block';
+    document.getElementById('code').value = q.get('code');
+  } else if (q.get('error')) {
+    document.body.insertAdjacentHTML('afterbegin', '<p style="color:#f66">Tesla said: ' + q.get('error') + '</p>');
+  }
+  function go() {
+    var cid = document.getElementById('cid').value.trim();
+    if (!cid) { return; }
+    try { localStorage.setItem('cid', cid); } catch (e) {}
+    var url = 'https://auth.tesla.com/oauth2/v3/authorize?response_type=code'
+      + '&client_id=' + encodeURIComponent(cid)
+      + '&redirect_uri=' + encodeURIComponent(redirect)
+      + '&scope=' + encodeURIComponent('openid offline_access vehicle_device_data vehicle_cmds')
+      + '&state=' + Math.random().toString(36).slice(2)
+      + '&prompt_missing_scopes=true';
+    location.href = url;
+  }
+  function copyCode() {
+    var t = document.getElementById('code');
+    t.select();
+    try { navigator.clipboard.writeText(t.value); } catch (e) { document.execCommand('copy'); }
+  }
+</script>
+</body>
+</html>
